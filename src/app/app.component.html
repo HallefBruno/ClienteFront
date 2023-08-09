@@ -1,0 +1,182 @@
+<nav class="navbar navbar-dark bg-dark">
+  <div class="container-fluid">
+    <span class="navbar-brand mb-0 h1">{{titleSpanNavBar}}</span>
+  </div>
+</nav>
+
+<div class="container-fluid" style="margin-top: 30px; margin-bottom: 30px;" >
+  <div class="container">
+    <div class="card">
+      <div class="card-header">
+        Cadastro de cliente
+      </div>
+      <div class="card-body">
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="row g-3 needs-validation">
+          <div class="col-md-4">
+            <label for="codigo" class="form-label">Código</label>
+            <input type="text" class="form-control" id="cod" formControlName="codigo" autocomplete="off">
+          </div>
+
+          <div class="col-md-4">
+            <label for="nome" class="form-label">Nome*</label>
+            <input type="text" class="form-control" id="nome" formControlName="nome" autocomplete="off" [ngClass]="{ 'is-invalid': submitted && f['nome'].errors }">
+            <div *ngIf="submitted && f['nome'].errors" class="invalid-feedback">
+              <div *ngIf="f['nome'].errors['required']">Nome obrigatório!</div>
+              <div *ngIf="f['nome'].errors['minlength']">O Nome do cliente deve ter pelo menos 3 caracteres!</div>
+              <div *ngIf="f['nome'].errors['maxlength']">O Nome do cliente deve ter no máximo 255 caracteres!</div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <label for="cnpj" class="form-label">CNPJ*</label> <!--[type]="'number'"-->
+            <input type="text" mask="00.000.000/0000-00" class="form-control" id="cnpj" formControlName="cnpj" autocomplete="off" [ngClass]="{ 'is-invalid': submitted && f['cnpj'].errors }">
+            <div *ngIf="submitted && f['cnpj'].errors" class="invalid-feedback">
+              <div *ngIf="f['cnpj'].errors['required']">CNPJ obrigatório!</div>
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <label for="cep" class="form-label">CEP*</label>
+            <div class="input-group">
+              <input type="text" class="form-control" id="cep" formControlName="cep" [readonly]="true" [ngClass]="{ 'is-invalid': submitted && f['cep'].errors }">
+              <button class="btn btn-outline-secondary" type="button" (click)="buscarCep()" [disabled]="true">Buscar</button>
+              <div *ngIf="submitted && f['cep'].errors" class="invalid-feedback">
+                <div *ngIf="f['cep'].errors['minlength']">O Cep do cliente deve ter pelo menos 4 caracteres!</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <label for="logradouro" class="form-label">Logradouro*</label>
+            <input type="text" class="form-control" id="logradouro" formControlName="logradouro" [readonly]="true" [ngClass]="{ 'is-invalid': submitted && f['logradouro'].errors }">
+            <div *ngIf="submitted && f['logradouro'].errors" class="invalid-feedback">
+              <div *ngIf="f['logradouro'].errors['required']">Logradouro obrigatório!</div>
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <label for="geolocalizacao" class="form-label">GeoLocalização*</label>
+            <input type="text" class="form-control" id="geolocalizacao" formControlName="geolocalizacao" [readonly]="true" [ngClass]="{ 'is-invalid': submitted && f['geolocalizacao'].errors }">
+            <div *ngIf="submitted && f['geolocalizacao'].errors" class="invalid-feedback">
+              <div *ngIf="f['geolocalizacao'].errors['required']">Geolocalização obrigatória!</div>
+            </div>
+          </div>
+
+          <div class="col-12">
+            <button class="btn btn-primary" type="submit">Salvar</button>
+            <button class="btn btn-outline-secondary" style="margin-left: 2px;" (click)="limparCampos()" type="button">Limpar</button>
+          </div>
+
+        </form>
+
+        <div class="mt-4 mb-4">
+          <h5>Buscar Endereço</h5>
+          <input type="text" class="form-control" [(ngModel)]="digitandoEndereco" (input)="onInputChange()" placeholder="Digite um endereço"/>
+          <ul class="list-group mt-2">
+            <li class="list-group-item cursor-pointer " *ngFor="let resultado of resultadosDigitado" (click)="enderecoSelecionado(resultado)">
+              {{ resultado.formatted_address }}
+            </li>
+          </ul>
+        </div>
+
+        <div class="container-fluid">
+          <google-map width="100%"
+            [center]="{ lat: latitude, lng: longitude }"
+            [zoomControl]="true"
+            [mapOptions]="{ mapTypeId: 'roadmap' }"
+            (mapClick)="addMarcador($event)">
+            <map-marker (mapDragend)="mapDragend($event)" *ngFor="let markerPosition of markerPositions"
+              [position]="markerPosition"
+              [options]="markerOptions">
+            </map-marker>
+          </google-map>
+        </div>
+
+        <div class="container-fluid mt-5">
+          <div class="card">
+            <div class="card-header">
+              Filtro
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-4">
+                  <label for="coluna" class="form-label">Coluna:</label>
+                  <select (change)="mudarTypeQuery()" [(ngModel)]="colunaSelecionada" class="form-select form-select-sm" id="coluna">
+                    <option *ngFor="let coluna of colunas" [value]="coluna.value">{{coluna.name}}</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label for="ordenacao" class="form-label">Ordenação:</label>
+                  <select [(ngModel)]="ordenacaoSelecionada" class="form-select form-select-sm" id="ordenacao">
+                    <option *ngFor="let ordenacao of ordenacoes" [value]="ordenacao.value">{{ordenacao.name}}</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label for="query" class="form-label">Descrição:</label>
+                  <input [(ngModel)]="query" class="form-control form-control-sm" placeholder="Descrição..." [type]="typeQuery" id="query">
+                </div>
+              </div>
+              <div class="row mt-2">
+                <div class="d-flex justify-content-end">
+                  <button (click)="filtrarClientes()" class="btn btn-sm btn-outline-primary">Filtrar</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="container-fluid mt-3">
+
+          <div class="row row-cols-lg-auto g-3 align-items-center d-flex justify-content-end">
+            <div class="col-12">Total por página</div>
+            <div class="col-12">
+              <select [(ngModel)]="totalPorPagina" class="form-select form-select-sm" (change)="onChangePagina()">
+                <option *ngFor="let pagina of arrayPaginas" [value]="pagina.value">{{pagina.label}}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table caption-top">
+              <caption>Lista de clientes</caption>
+              <thead>
+                <tr>
+                  <th>Id</th>
+                  <th>Código</th>
+                  <th>Nome</th>
+                  <th>CNPJ</th>
+                  <th>CEP</th>
+                  <th>Logradouro</th>
+                  <th>GeoLocalização</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let cliente of clientes">
+                  <td>{{cliente.id}}</td>
+                  <td>{{cliente.codigo}}</td>
+                  <td>{{cliente.nome}}</td>
+                  <td>{{cliente.cnpj}}</td>
+                  <td>{{cliente.cep}}</td>
+                  <td>{{cliente.logradouro}}</td>
+                  <td>{{cliente.geolocalizacao}}</td>
+                  <td>
+                    <div class="btn-group" role="group">
+                      <button type="button" class="btn btn-sm btn-danger" title="Excluir" (click)="excluir(cliente.id)"><i class="fa-solid fa-trash"></i></button>
+                      <button type="button" class="btn btn-sm btn-primary" title="Editar" (click)="buscarCliente(cliente.id)"><i class="fa-regular fa-pen-to-square"></i></button>
+                    </div>
+                  </td>
+                </tr>
+                <tr *ngIf="clientes.length === 0">
+                  <td colspan="8">Nenhum registro encontrado</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<router-outlet></router-outlet>
