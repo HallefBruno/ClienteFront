@@ -115,7 +115,3 @@ aio/content/examples/.DS_Store
 *.vsix
 .vscode/
 .editorconfig
-package-lock.json
-tsconfig.app.json
-tsconfig.json
-tsconfig.spec.json
